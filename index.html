@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>目標管理アプリ</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', 'Yu Gothic UI', sans-serif;
+      background: #0f0f1a;
+      color: #e0e0f0;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1a3e, #2d1b69);
+      padding: 24px 32px;
+      border-bottom: 1px solid #3a3a6a;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #a78bfa, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header .subtitle {
+      font-size: 0.9rem;
+      color: #8888aa;
+    }
+
+    .date-badge {
+      margin-left: auto;
+      background: #2d2d5a;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      color: #a0a0cc;
+    }
+
+    .tabs {
+      display: flex;
+      background: #12122a;
+      padding: 0 32px;
+      border-bottom: 1px solid #2a2a4a;
+    }
+
+    .tab-btn {
+      padding: 16px 28px;
+      background: none;
+      border: none;
+      color: #7070a0;
+      font-size: 1rem;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .tab-btn:hover { color: #c0c0e0; }
+
+    .tab-btn.active {
+      color: #a78bfa;
+      border-bottom-color: #a78bfa;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 32px;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .period-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .period-nav {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-btn {
+      background: #1e1e3f;
+      border: 1px solid #3a3a6a;
+      color: #a0a0cc;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .nav-btn:hover { background: #2d2d5a; color: #e0e0f0; }
+
+    .period-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #c0c0e0;
+      min-width: 180px;
+      text-align: center;
+    }
+
+    .today-btn {
+      background: #1e1e3f;
+      border: 1px solid #3a3a6a;
+      color: #a78bfa;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    .today-btn:hover { background: #2d2d5a; }
+
+    .add-goal-form {
+      background: #1a1a3a;
+      border: 1px solid #2a2a5a;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .add-goal-form h3 {
+      font-size: 0.9rem;
+      color: #7070a0;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .goal-input {
+      flex: 1;
+      background: #0f0f1a;
+      border: 1px solid #3a3a6a;
+      color: #e0e0f0;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-family: inherit;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    .goal-input:focus { border-color: #a78bfa; }
+
+    .priority-select {
+      background: #0f0f1a;
+      border: 1px solid #3a3a6a;
+      color: #e0e0f0;
+      padding: 12px 12px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .add-btn {
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 1rem;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 600;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .add-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .add-btn:active { transform: translateY(0); }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: #1a1a3a;
+      border: 1px solid #2a2a5a;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #a78bfa;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: #7070a0;
+      margin-top: 4px;
+    }
+
+    .progress-bar-wrap {
+      background: #1a1a3a;
+      border: 1px solid #2a2a5a;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+
+    .progress-bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: #9090b0;
+      margin-bottom: 8px;
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: #0f0f1a;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #7c3aed, #60a5fa);
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+
+    .goals-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #5050a0;
+    }
+
+    .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+    .empty-state p { font-size: 1rem; }
+
+    .goal-item {
+      background: #1a1a3a;
+      border: 1px solid #2a2a5a;
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: all 0.2s;
+      animation: slideIn 0.2s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .goal-item:hover { border-color: #4a4a7a; }
+    .goal-item.done { opacity: 0.6; }
+
+    .goal-checkbox {
+      width: 22px;
+      height: 22px;
+      border: 2px solid #4a4a7a;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+
+    .goal-checkbox:hover { border-color: #a78bfa; }
+    .goal-item.done .goal-checkbox { background: #7c3aed; border-color: #7c3aed; }
+    .goal-checkbox .check { display: none; color: white; font-size: 13px; }
+    .goal-item.done .check { display: block; }
+
+    .goal-text {
+      flex: 1;
+      font-size: 1rem;
+      color: #d0d0f0;
+      cursor: pointer;
+    }
+
+    .goal-item.done .goal-text {
+      text-decoration: line-through;
+      color: #6060a0;
+    }
+
+    .priority-tag {
+      font-size: 0.75rem;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+
+    .priority-high { background: #3d1515; color: #f87171; border: 1px solid #5a2020; }
+    .priority-mid  { background: #3d2f0d; color: #fbbf24; border: 1px solid #5a4010; }
+    .priority-low  { background: #0d2d1f; color: #34d399; border: 1px solid #105a3a; }
+
+    .delete-btn {
+      background: none;
+      border: none;
+      color: #4a4a7a;
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 4px;
+      border-radius: 6px;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .delete-btn:hover { color: #f87171; background: #2d1515; }
+
+    .section-divider {
+      font-size: 0.8rem;
+      color: #5050a0;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin: 20px 0 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #2a2a4a;
+    }
+
+    .memo-area {
+      background: #1a1a3a;
+      border: 1px solid #2a2a5a;
+      border-radius: 16px;
+      padding: 20px;
+      margin-top: 24px;
+    }
+
+    .memo-area h3 {
+      font-size: 0.9rem;
+      color: #7070a0;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+    }
+
+    .memo-textarea {
+      width: 100%;
+      min-height: 100px;
+      background: #0f0f1a;
+      border: 1px solid #3a3a6a;
+      color: #c0c0e0;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .memo-textarea:focus { border-color: #a78bfa; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>目標管理</h1>
+    <div class="subtitle">Goal Manager</div>
+  </div>
+  <div class="date-badge" id="currentDate"></div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('weekly')">週間目標</button>
+  <button class="tab-btn" onclick="switchTab('monthly')">月間目標</button>
+</div>
+
+<div class="container">
+
+  <!-- 週間タブ -->
+  <div id="tab-weekly" class="tab-content active">
+    <div class="period-header">
+      <div class="period-nav">
+        <button class="nav-btn" onclick="changeWeek(-1)">&#8249;</button>
+        <div class="period-title" id="weekTitle"></div>
+        <button class="nav-btn" onclick="changeWeek(1)">&#8250;</button>
+      </div>
+      <button class="today-btn" onclick="goToCurrentWeek()">今週</button>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value" id="w-total">0</div>
+        <div class="stat-label">総目標数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="w-done">0</div>
+        <div class="stat-label">達成済み</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="w-rate">0%</div>
+        <div class="stat-label">達成率</div>
+      </div>
+    </div>
+
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-label">
+        <span>進捗</span>
+        <span id="w-progress-text">0 / 0</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="w-progress-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="add-goal-form">
+      <h3>新しい目標を追加</h3>
+      <div class="input-row">
+        <input class="goal-input" id="w-input" placeholder="今週の目標を入力..." onkeydown="if(event.key==='Enter') addGoal('weekly')">
+        <select class="priority-select" id="w-priority">
+          <option value="high">高</option>
+          <option value="mid" selected>中</option>
+          <option value="low">低</option>
+        </select>
+        <button class="add-btn" onclick="addGoal('weekly')">追加</button>
+      </div>
+    </div>
+
+    <div class="goals-list" id="w-goals"></div>
+
+    <div class="memo-area">
+      <h3>メモ・振り返り</h3>
+      <textarea class="memo-textarea" id="w-memo" placeholder="今週の振り返りやメモ..." oninput="saveMemo('weekly')"></textarea>
+    </div>
+  </div>
+
+  <!-- 月間タブ -->
+  <div id="tab-monthly" class="tab-content">
+    <div class="period-header">
+      <div class="period-nav">
+        <button class="nav-btn" onclick="changeMonth(-1)">&#8249;</button>
+        <div class="period-title" id="monthTitle"></div>
+        <button class="nav-btn" onclick="changeMonth(1)">&#8250;</button>
+      </div>
+      <button class="today-btn" onclick="goToCurrentMonth()">今月</button>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value" id="m-total">0</div>
+        <div class="stat-label">総目標数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="m-done">0</div>
+        <div class="stat-label">達成済み</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="m-rate">0%</div>
+        <div class="stat-label">達成率</div>
+      </div>
+    </div>
+
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-label">
+        <span>進捗</span>
+        <span id="m-progress-text">0 / 0</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="m-progress-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="add-goal-form">
+      <h3>新しい目標を追加</h3>
+      <div class="input-row">
+        <input class="goal-input" id="m-input" placeholder="今月の目標を入力..." onkeydown="if(event.key==='Enter') addGoal('monthly')">
+        <select class="priority-select" id="m-priority">
+          <option value="high">高</option>
+          <option value="mid" selected>中</option>
+          <option value="low">低</option>
+        </select>
+        <button class="add-btn" onclick="addGoal('monthly')">追加</button>
+      </div>
+    </div>
+
+    <div class="goals-list" id="m-goals"></div>
+
+    <div class="memo-area">
+      <h3>メモ・振り返り</h3>
+      <textarea class="memo-textarea" id="m-memo" placeholder="今月の振り返りやメモ..." oninput="saveMemo('monthly')"></textarea>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const PRIORITY_LABELS = { high: '優先度：高', mid: '優先度：中', low: '優先度：低' };
+  const PRIORITY_CLASSES = { high: 'priority-high', mid: 'priority-mid', low: 'priority-low' };
+
+  let weekOffset = 0;
+  let monthOffset = 0;
+
+  function getWeekKey(offset) {
+    const d = new Date();
+    d.setDate(d.getDate() - d.getDay() + 1 + offset * 7);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `week_${y}${m}${day}`;
+  }
+
+  function getMonthKey(offset) {
+    const d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() + offset);
+    return `month_${d.getFullYear()}_${d.getMonth() + 1}`;
+  }
+
+  function getWeekRange(offset) {
+    const d = new Date();
+    const day = d.getDay();
+    const mon = new Date(d);
+    mon.setDate(d.getDate() - (day === 0 ? 6 : day - 1) + offset * 7);
+    const sun = new Date(mon);
+    sun.setDate(mon.getDate() + 6);
+    const fmt = (dt) => `${dt.getMonth() + 1}/${dt.getDate()}`;
+    const year = mon.getFullYear();
+    return `${year}年  ${fmt(mon)} 〜 ${fmt(sun)}`;
+  }
+
+  function getMonthLabel(offset) {
+    const d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() + offset);
+    return `${d.getFullYear()}年 ${d.getMonth() + 1}月`;
+  }
+
+  function loadData(key) {
+    try { return JSON.parse(localStorage.getItem(key)) || { goals: [], memo: '' }; }
+    catch { return { goals: [], memo: '' }; }
+  }
+
+  function saveData(key, data) {
+    localStorage.setItem(key, JSON.stringify(data));
+  }
+
+  function addGoal(type) {
+    const isWeekly = type === 'weekly';
+    const input = document.getElementById(isWeekly ? 'w-input' : 'm-input');
+    const priority = document.getElementById(isWeekly ? 'w-priority' : 'm-priority');
+    const text = input.value.trim();
+    if (!text) { input.focus(); return; }
+
+    const key = isWeekly ? getWeekKey(weekOffset) : getMonthKey(monthOffset);
+    const data = loadData(key);
+    data.goals.push({ id: Date.now(), text, done: false, priority: priority.value });
+    saveData(key, data);
+    input.value = '';
+    input.focus();
+    renderGoals(type);
+  }
+
+  function toggleGoal(type, id) {
+    const key = type === 'weekly' ? getWeekKey(weekOffset) : getMonthKey(monthOffset);
+    const data = loadData(key);
+    const goal = data.goals.find(g => g.id === id);
+    if (goal) goal.done = !goal.done;
+    saveData(key, data);
+    renderGoals(type);
+  }
+
+  function deleteGoal(type, id) {
+    const key = type === 'weekly' ? getWeekKey(weekOffset) : getMonthKey(monthOffset);
+    const data = loadData(key);
+    data.goals = data.goals.filter(g => g.id !== id);
+    saveData(key, data);
+    renderGoals(type);
+  }
+
+  function saveMemo(type) {
+    const key = type === 'weekly' ? getWeekKey(weekOffset) : getMonthKey(monthOffset);
+    const el = document.getElementById(type === 'weekly' ? 'w-memo' : 'm-memo');
+    const data = loadData(key);
+    data.memo = el.value;
+    saveData(key, data);
+  }
+
+  function renderGoals(type) {
+    const isWeekly = type === 'weekly';
+    const key = isWeekly ? getWeekKey(weekOffset) : getMonthKey(monthOffset);
+    const data = loadData(key);
+    const goals = data.goals;
+
+    const prefix = isWeekly ? 'w' : 'm';
+    const container = document.getElementById(`${prefix}-goals`);
+    const memoEl = document.getElementById(`${prefix}-memo`);
+
+    memoEl.value = data.memo || '';
+
+    const done = goals.filter(g => g.done).length;
+    const total = goals.length;
+    const rate = total > 0 ? Math.round(done / total * 100) : 0;
+
+    document.getElementById(`${prefix}-total`).textContent = total;
+    document.getElementById(`${prefix}-done`).textContent = done;
+    document.getElementById(`${prefix}-rate`).textContent = rate + '%';
+    document.getElementById(`${prefix}-progress-text`).textContent = `${done} / ${total}`;
+    document.getElementById(`${prefix}-progress-fill`).style.width = rate + '%';
+
+    if (goals.length === 0) {
+      container.innerHTML = `<div class="empty-state"><div class="icon">🎯</div><p>目標をまだ追加していません</p></div>`;
+      return;
+    }
+
+    const order = ['high', 'mid', 'low'];
+    const sorted = [...goals].sort((a, b) => {
+      if (a.done !== b.done) return a.done ? 1 : -1;
+      return order.indexOf(a.priority) - order.indexOf(b.priority);
+    });
+
+    let html = '';
+    let shownDivider = false;
+    sorted.forEach(g => {
+      if (g.done && !shownDivider) {
+        html += `<div class="section-divider">達成済み</div>`;
+        shownDivider = true;
+      }
+      html += `
+        <div class="goal-item ${g.done ? 'done' : ''}" id="goal-${g.id}">
+          <div class="goal-checkbox" onclick="toggleGoal('${type}', ${g.id})">
+            <span class="check">✓</span>
+          </div>
+          <div class="goal-text" onclick="toggleGoal('${type}', ${g.id})">${escapeHtml(g.text)}</div>
+          <span class="priority-tag ${PRIORITY_CLASSES[g.priority]}">${PRIORITY_LABELS[g.priority]}</span>
+          <button class="delete-btn" onclick="deleteGoal('${type}', ${g.id})" title="削除">✕</button>
+        </div>`;
+    });
+
+    container.innerHTML = html;
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById(`tab-${tab}`).classList.add('active');
+  }
+
+  function changeWeek(d) { weekOffset += d; updateWeekUI(); }
+  function changeMonth(d) { monthOffset += d; updateMonthUI(); }
+  function goToCurrentWeek() { weekOffset = 0; updateWeekUI(); }
+  function goToCurrentMonth() { monthOffset = 0; updateMonthUI(); }
+
+  function updateWeekUI() {
+    document.getElementById('weekTitle').textContent = getWeekRange(weekOffset);
+    renderGoals('weekly');
+  }
+
+  function updateMonthUI() {
+    document.getElementById('monthTitle').textContent = getMonthLabel(monthOffset);
+    renderGoals('monthly');
+  }
+
+  function initDateBadge() {
+    const d = new Date();
+    const days = ['日', '月', '火', '水', '木', '金', '土'];
+    document.getElementById('currentDate').textContent =
+      `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${days[d.getDay()]}）`;
+  }
+
+  initDateBadge();
+  updateWeekUI();
+  updateMonthUI();
+</script>
+</body>
+</html>
