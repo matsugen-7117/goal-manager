@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>目標管理アプリ</title>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -390,6 +391,159 @@
     }
 
     .memo-textarea:focus { border-color: #a78bfa; }
+
+    .share-area {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .share-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 1px solid #3a3a6a;
+      background: #1a1a3a;
+      color: #c0c0e0;
+      font-size: 0.95rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .share-btn:hover { background: #2a2a5a; border-color: #a78bfa; color: #e0e0f0; }
+    .share-btn:active { transform: scale(0.98); }
+    .share-btn .icon { font-size: 1.1rem; }
+
+    /* トースト通知 */
+    #toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #2d2d5a;
+      color: #e0e0f0;
+      padding: 12px 24px;
+      border-radius: 24px;
+      font-size: 0.95rem;
+      border: 1px solid #4a4a7a;
+      opacity: 0;
+      transition: all 0.3s ease;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 9999;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* 画像出力用シェアカード（画面外に配置） */
+    #share-card {
+      position: absolute;
+      left: -9999px;
+      top: 0;
+      width: 600px;
+      background: #0f0f1a;
+      padding: 32px;
+      font-family: 'Segoe UI', 'Yu Gothic UI', sans-serif;
+      color: #e0e0f0;
+    }
+
+    .sc-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #2a2a4a;
+    }
+
+    .sc-title { font-size: 1.3rem; font-weight: 700; color: #a78bfa; }
+    .sc-period { font-size: 0.9rem; color: #8080a0; margin-top: 4px; }
+    .sc-brand { font-size: 0.8rem; color: #5050a0; }
+
+    .sc-stats {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .sc-stat {
+      background: #1a1a3a;
+      border: 1px solid #2a2a5a;
+      border-radius: 10px;
+      padding: 10px 16px;
+      text-align: center;
+      flex: 1;
+    }
+
+    .sc-stat-val { font-size: 1.6rem; font-weight: 700; color: #a78bfa; }
+    .sc-stat-lbl { font-size: 0.75rem; color: #6060a0; }
+
+    .sc-progress {
+      background: #1a1a3a;
+      border-radius: 6px;
+      height: 8px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+
+    .sc-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #7c3aed, #60a5fa);
+      border-radius: 6px;
+    }
+
+    .sc-goal {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: #1a1a3a;
+      border: 1px solid #2a2a5a;
+      border-radius: 10px;
+      margin-bottom: 8px;
+    }
+
+    .sc-goal.done { opacity: 0.55; }
+
+    .sc-check {
+      width: 20px;
+      height: 20px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .sc-check.checked { background: #7c3aed; color: white; }
+    .sc-check.unchecked { border: 2px solid #4a4a7a; }
+
+    .sc-goal-text { flex: 1; font-size: 0.95rem; color: #d0d0f0; }
+    .sc-goal.done .sc-goal-text { text-decoration: line-through; color: #6060a0; }
+
+    .sc-tag {
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+
+    .sc-divider {
+      font-size: 0.75rem;
+      color: #5050a0;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin: 14px 0 8px;
+    }
   </style>
 </head>
 <body>
@@ -460,6 +614,15 @@
 
     <div class="goals-list" id="w-goals"></div>
 
+    <div class="share-area">
+      <button class="share-btn" onclick="copyAsImage('weekly')">
+        <span class="icon">🖼️</span> 画像としてコピー
+      </button>
+      <button class="share-btn" onclick="copyAsText('weekly')">
+        <span class="icon">📋</span> テキストとしてコピー
+      </button>
+    </div>
+
     <div class="memo-area">
       <h3>メモ・振り返り</h3>
       <textarea class="memo-textarea" id="w-memo" placeholder="今週の振り返りやメモ..." oninput="saveMemo('weekly')"></textarea>
@@ -517,6 +680,15 @@
 
     <div class="goals-list" id="m-goals"></div>
 
+    <div class="share-area">
+      <button class="share-btn" onclick="copyAsImage('monthly')">
+        <span class="icon">🖼️</span> 画像としてコピー
+      </button>
+      <button class="share-btn" onclick="copyAsText('monthly')">
+        <span class="icon">📋</span> テキストとしてコピー
+      </button>
+    </div>
+
     <div class="memo-area">
       <h3>メモ・振り返り</h3>
       <textarea class="memo-textarea" id="m-memo" placeholder="今月の振り返りやメモ..." oninput="saveMemo('monthly')"></textarea>
@@ -524,6 +696,12 @@
   </div>
 
 </div>
+
+<!-- トースト通知 -->
+<div id="toast"></div>
+
+<!-- 画像出力用の隠しカード -->
+<div id="share-card"></div>
 
 <script>
   const PRIORITY_LABELS = { high: '優先度：高', mid: '優先度：中', low: '優先度：低' };
@@ -707,6 +885,151 @@
   initDateBadge();
   updateWeekUI();
   updateMonthUI();
+
+  // ===== 共有機能 =====
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  function getShareData(type) {
+    const isWeekly = type === 'weekly';
+    const key  = isWeekly ? getWeekKey(weekOffset) : getMonthKey(monthOffset);
+    const data = loadData(key);
+    const period = isWeekly ? getWeekRange(weekOffset) : getMonthLabel(monthOffset);
+    const label  = isWeekly ? '週間目標' : '月間目標';
+    return { data, period, label };
+  }
+
+  function copyAsText(type) {
+    const { data, period, label } = getShareData(type);
+    const goals = data.goals;
+    if (goals.length === 0) { showToast('目標がありません'); return; }
+
+    const done  = goals.filter(g => g.done).length;
+    const total = goals.length;
+    const rate  = total > 0 ? Math.round(done / total * 100) : 0;
+    const PLABEL = { high: '[高]', mid: '[中]', low: '[低]' };
+    const order  = ['high', 'mid', 'low'];
+    const sorted = [...goals].sort((a, b) => {
+      if (a.done !== b.done) return a.done ? 1 : -1;
+      return order.indexOf(a.priority) - order.indexOf(b.priority);
+    });
+
+    let lines = [];
+    lines.push(`📋 ${label} — ${period}`);
+    lines.push(`達成率: ${rate}%（${done}/${total}）`);
+    lines.push('');
+
+    let dividerShown = false;
+    sorted.forEach(g => {
+      if (g.done && !dividerShown) {
+        lines.push('── 達成済み ──');
+        dividerShown = true;
+      }
+      const check = g.done ? '☑' : '☐';
+      lines.push(`${check} ${PLABEL[g.priority]} ${g.text}`);
+    });
+
+    lines.push('');
+    lines.push('— Goal Manager —');
+
+    navigator.clipboard.writeText(lines.join('\n'))
+      .then(() => showToast('テキストをコピーしました'))
+      .catch(() => showToast('コピーに失敗しました'));
+  }
+
+  function buildShareCard(type) {
+    const { data, period, label } = getShareData(type);
+    const goals = data.goals;
+    const done  = goals.filter(g => g.done).length;
+    const total = goals.length;
+    const rate  = total > 0 ? Math.round(done / total * 100) : 0;
+    const order = ['high', 'mid', 'low'];
+    const sorted = [...goals].sort((a, b) => {
+      if (a.done !== b.done) return a.done ? 1 : -1;
+      return order.indexOf(a.priority) - order.indexOf(b.priority);
+    });
+
+    const TAG_STYLE = {
+      high: 'background:#3d1515;color:#f87171;border:1px solid #5a2020',
+      mid:  'background:#3d2f0d;color:#fbbf24;border:1px solid #5a4010',
+      low:  'background:#0d2d1f;color:#34d399;border:1px solid #105a3a',
+    };
+    const TAG_LABEL = { high: '優先度：高', mid: '優先度：中', low: '優先度：低' };
+
+    let goalsHtml = '';
+    let dividerShown = false;
+    sorted.forEach(g => {
+      if (g.done && !dividerShown) {
+        goalsHtml += `<div class="sc-divider">達成済み</div>`;
+        dividerShown = true;
+      }
+      const checkStyle = g.done
+        ? 'class="sc-check checked">✓'
+        : 'class="sc-check unchecked">';
+      goalsHtml += `
+        <div class="sc-goal ${g.done ? 'done' : ''}">
+          <div ${checkStyle}</div>
+          <div class="sc-goal-text">${escapeHtml(g.text)}</div>
+          <span class="sc-tag" style="${TAG_STYLE[g.priority]}">${TAG_LABEL[g.priority]}</span>
+        </div>`;
+    });
+
+    if (goals.length === 0) {
+      goalsHtml = `<div style="text-align:center;padding:24px;color:#5050a0;">目標がありません</div>`;
+    }
+
+    document.getElementById('share-card').innerHTML = `
+      <div class="sc-header">
+        <div>
+          <div class="sc-title">${label}</div>
+          <div class="sc-period">${period}</div>
+        </div>
+        <div class="sc-brand">Goal Manager</div>
+      </div>
+      <div class="sc-stats">
+        <div class="sc-stat"><div class="sc-stat-val">${total}</div><div class="sc-stat-lbl">総目標数</div></div>
+        <div class="sc-stat"><div class="sc-stat-val">${done}</div><div class="sc-stat-lbl">達成済み</div></div>
+        <div class="sc-stat"><div class="sc-stat-val">${rate}%</div><div class="sc-stat-lbl">達成率</div></div>
+      </div>
+      <div class="sc-progress">
+        <div class="sc-progress-fill" style="width:${rate}%"></div>
+      </div>
+      ${goalsHtml}
+    `;
+  }
+
+  function copyAsImage(type) {
+    const { data } = getShareData(type);
+    if (data.goals.length === 0) { showToast('目標がありません'); return; }
+
+    buildShareCard(type);
+    const card = document.getElementById('share-card');
+
+    html2canvas(card, {
+      backgroundColor: '#0f0f1a',
+      scale: 2,
+      useCORS: true,
+      logging: false,
+    }).then(canvas => {
+      canvas.toBlob(blob => {
+        navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+          .then(() => showToast('画像をコピーしました'))
+          .catch(() => {
+            // フォールバック: 画像をダウンロード
+            const a = document.createElement('a');
+            a.href = canvas.toDataURL('image/png');
+            a.download = 'goals.png';
+            a.click();
+            showToast('画像を保存しました（ダウンロード）');
+          });
+      }, 'image/png');
+    });
+  }
 </script>
 </body>
 </html>
